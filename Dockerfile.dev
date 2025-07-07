@@ -1,5 +1,6 @@
 FROM python:alpine
 
+# Install dependencies
 RUN apk add --no-cache gcc python3-dev musl-dev linux-headers
 
 # Install uv.
@@ -12,6 +13,7 @@ COPY . /app
 WORKDIR /app
 RUN uv sync --frozen --no-cache
 
+# Define which folder executables are.
 ENV PATH="/app/.venv/bin:$PATH"
 
 # Run the application.
