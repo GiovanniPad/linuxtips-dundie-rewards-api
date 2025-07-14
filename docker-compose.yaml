@@ -1,0 +1,43 @@
+name: dundie-api
+services:
+  # Serviço da API FastAPI
+  api:
+    image: dundie-fastapi
+    container_name: fastapi
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "8000:8000"
+    environment:
+      DUNDIE_DB__uri: "postgresql://postgres:postgres@db:5342/${DUNDIE_DB:-dundie}"
+      DUNDIE_DB__connect_args: "{}"
+    depends_on:
+      - db
+    stdin_open: true
+    tty: true
+    develop:
+      watch:
+        - action: sync
+          path: ./src
+          target: /app/src
+          ignore:
+           - .venv/
+
+        - action: rebuild
+          path: ./pyproject.toml
+  db:
+    build: postgres
+    container_name: postgres
+    image: dundie-api-postgres-17
+    volumes:
+      - dundie_pg_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DBS=dundie, dundie_test
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+  
+volumes:
+  dundie_pg_data:
