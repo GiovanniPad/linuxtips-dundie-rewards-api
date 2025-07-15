@@ -1,0 +1,15 @@
+# Cria um dicionário vazio para armazenar configurações padrão da aplicação.
+[default]
+
+# Cria dentro do dicionário uma subchave chamada 'db', com isso
+# é possível importar esses valores através do objeto de configurações
+# criado em 'config.py'.
+# O acesso é utilizando notação de ponto.
+[default.db]
+# URI para conexão do banco de dados.
+uri = ""
+# Argumentos de conexão extra para serem passados ao conectar com
+# o banco de dados.
+connect_args = {check_same_thread=false}
+# Desabilita a impressão dos comandos SQL usados no terminal e nos logs.
+echo = false
