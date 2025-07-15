@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "fastapi[standard]>=0.115.14",
+    "sqlmodel>=0.0.24",
 ]
 
 [build-system]
@@ -23,4 +24,5 @@ dev = [
 ]
 
 [tool.taskipy.tasks]
-devserver = { cmd = "uv run fastapi dev src/dundie_api/main.py", help = "Run FastAPI Development Server" }
+devserver = { cmd = "uvicorn src.dundie_api.main:app --host 0.0.0.0 --port 8000 --reload", help = "Run FastAPI Development Server" }
+rundocker = { cmd = "docker compose up --watch", help = "Run docker compose to initialize FastAPI and Postgres Containers."}
