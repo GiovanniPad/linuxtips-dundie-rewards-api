@@ -10,22 +10,21 @@ services:
     ports:
       - "8000:8000"
     environment:
-      DUNDIE_DB__uri: "postgresql://postgres:postgres@db:5342/${DUNDIE_DB:-dundie}"
+      DUNDIE_DB__uri: "postgresql+psycopg://postgres:postgres@db:5432/${DUNDIE_DB:-dundie}"
       DUNDIE_DB__connect_args: "{}"
     depends_on:
       - db
-    stdin_open: true
-    tty: true
     develop:
       watch:
-        - action: sync
-          path: ./src
-          target: /app/src
-          ignore:
-           - .venv/
-
         - action: rebuild
           path: ./pyproject.toml
+          ignore:
+            - ./src
+    volumes:
+      - .:/app
+      - /app/.venv
+    working_dir: /app
+
   db:
     build: postgres
     container_name: postgres
@@ -38,6 +37,13 @@ services:
       - POSTGRES_DBS=dundie, dundie_test
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
+    restart: always
+    develop:
+      watch:
+        - action: restart
+          path: ./pyproject.toml
+          ignore:
+            - ./src
   
 volumes:
   dundie_pg_data:

@@ -1,4 +1,5 @@
 # Cria um dicionário vazio para armazenar configurações padrão da aplicação.
+# É uma sessão/tabela de comandos
 [default]
 
 # Cria dentro do dicionário uma subchave chamada 'db', com isso

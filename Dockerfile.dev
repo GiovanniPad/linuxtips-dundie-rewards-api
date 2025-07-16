@@ -1,7 +1,6 @@
-FROM python:alpine
+FROM python:3-slim-bookworm
 
-# Install dependencies.
-RUN apk add --no-cache gcc python3-dev musl-dev linux-headers
+RUN groupadd app && useradd -g app app
 
 # Install uv.
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
@@ -11,10 +10,13 @@ COPY . /app
 
 # Install the application dependencies.
 WORKDIR /app
+
 RUN uv sync --frozen --no-cache
 
-# Define which folder executables are.
-ENV PATH="/app/.venv/bin:$PATH"
+ENV PATH=/app/.venv/bin:$PATH
+
+RUN chown -R app:app /app
+USER app
 
 # Run the application.
-CMD ["uvicorn", "src.dundie_api.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--reload-dir", "src/"]
+CMD ["fastapi", "dev", "src/dundie_api/main.py", "--port", "8000", "--host", "0.0.0.0", "--reload"]
