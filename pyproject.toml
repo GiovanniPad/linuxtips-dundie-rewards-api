@@ -9,8 +9,13 @@ dependencies = [
     "dynaconf>=3.2.11",
     "fastapi[standard]>=0.115.14",
     "psycopg[binary]>=3.2.9",
+    "rich>=14.0.0",
     "sqlmodel>=0.0.24",
+    "typer>=0.16.0",
 ]
+
+[project.scripts]
+dundie = "dundie_api.cli:main"
 
 [build-system]
 requires = ["hatchling"]
@@ -28,5 +33,5 @@ dev = [
 
 [tool.taskipy.tasks]
 devserver = { cmd = "uvicorn src.dundie_api.main:app --host 0.0.0.0 --port 8000 --reload", help = "Run FastAPI Development Server" }
-rundocker = { cmd = "docker compose up --watch", help = "Run docker compose to initialize FastAPI and Postgres Containers."}
+rundocker = { cmd = "docker compose up -V --watch", help = "Run docker compose to initialize FastAPI and Postgres Containers."}
 start_migrations = { cmd = "alembic init migrations", help = "Initialize Alembic Migrations"}

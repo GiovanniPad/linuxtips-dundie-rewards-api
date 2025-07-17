@@ -13,7 +13,9 @@ WORKDIR /app
 
 RUN uv sync --frozen --no-cache
 
-ENV PATH=/app/.venv/bin:$PATH
+ENV PATH="/app/.venv/bin:$PATH"
+ENV UV_CACHE_DIR="/app/.cache/uv"
+ENV UV_LINK_MODE=copy
 
 RUN chown -R app:app /app
 USER app
