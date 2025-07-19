@@ -14,3 +14,8 @@ uri = ""
 connect_args = {check_same_thread=false}
 # Desabilita a impressão dos comandos SQL usados no terminal e nos logs.
 echo = false
+
+# Configurações de segurança da aplicação.
+[default.security]
+# A chave deve ser definida em .secrets.toml.
+#SECRET_KEY = ""
