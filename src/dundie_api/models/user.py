@@ -1,9 +1,11 @@
 # Classe para definir que uma variável pode ser None, ou seja, opcional.
 from typing import Optional
+
 # Classes para realizar modelagem de dados.
 # 'Field' declara um campo de uma tabela e 'SQLModel' permite que uma classe
 # se torne, através de herança, uma representação de uma tabela (modelo de dados).
 from sqlmodel import Field, SQLModel
+from dundie_api.security import HashedPassword
 
 
 # Criando a classe 'User', que representa a tabela 'user' no banco de dados.
@@ -26,8 +28,11 @@ class User(SQLModel, table=True):
     avatar: Optional[str] = None
     # Campo para a biografia do usuário, também é opcional, mas pode ser uma string.
     bio: Optional[str] = None
-    # Campo para armazenar a senha do usuário, obrigatório. (Not Null)
-    password: str = Field(nullable=False)
+    # Campo para armazenar a senha do usuário, a classe 'HashedPassword' é a Type
+    # Annotation que vai gerar e atribuir o hash da senha ao armazenar um usuário
+    # no banco de dados. O Hash é gerado a partir da senha base (plain).
+    # TODO: Use default factories
+    password: HashedPassword
     # Campo para armazenar o nome do usuário, obrigatório. (Not Null)
     name: str = Field(nullable=False)
     # Campo para armazenar o departamento do usuário na empresa, obrigatório. (Not Null)
@@ -47,3 +52,15 @@ class User(SQLModel, table=True):
     def superuser(self):
         """Users belonging to Management dept are admins."""
         return self.dept == "management"
+
+
+# TODO: Use slugify library
+# Função para gerar um username a partir do nome do usuário (slug).
+def generate_username(name: str) -> str:
+    """Generate a slug from user.name.
+    >>> "Bruno Rocha" -> "bruno-rocha"
+    """
+
+    # Converte tudo para minúsculo e substituí os espaços em branco
+    # por traços (-).
+    return name.lower().replace(" ", "-")

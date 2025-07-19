@@ -39,9 +39,9 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    url = settings.db.uri # type: ignore
+    url = settings.db.uri  # type: ignore
     context.configure(
-        url=url, # type: ignore
+        url=url,  # type: ignore
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
@@ -61,9 +61,7 @@ def run_migrations_online() -> None:
     connectable = engine
 
     with connectable.connect() as connection:
-        context.configure(
-            connection=connection, target_metadata=target_metadata
-        )
+        context.configure(connection=connection, target_metadata=target_metadata)
 
         with context.begin_transaction():
             context.run_migrations()

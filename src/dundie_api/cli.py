@@ -34,7 +34,7 @@ def shell():
         "engine": engine,
         "select": select,
         "session": Session(engine),
-        "User": User
+        "User": User,
     }
     # Imprime uma mensagem no console informando os módulos que
     # foram importados automaticamente.
@@ -50,9 +50,7 @@ def shell():
         # parâmetro 'argv' é responsável por passar argumentos para a
         # inicialização do shell e 'user_ns' passa as variáveis que vão ser
         # iniciadas juntas com o ipython, tornando-as disponíveis dentro do shell.
-        start_ipython(
-            argv=["--ipython-dir=/tmp", "--no-banner"], user_ns=_vars
-        )
+        start_ipython(argv=["--ipython-dir=/tmp", "--no-banner"], user_ns=_vars)
     except ImportError:
         # Importa a biblioteca padrão para emular o shell padrão do Python.
         import code
@@ -77,7 +75,7 @@ def user_list():
     # o nome contido na lista de campos e atribui a cor magenta a todas.
     for header in fields:
         table.add_column(header, style="magenta")
-    
+
     # Abre um gerenciador de contextos com uma sessão do banco de dados,
     # permitindo a execução de querys SQL.
     with Session(engine) as session:

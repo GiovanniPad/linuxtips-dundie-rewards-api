@@ -1,8 +1,10 @@
 """Settings module"""
+
 # Biblioteca para manipular rotinas do Sistema Operacional.
 import os
+
 # Biblioteca para configuração.
-from dynaconf import Dynaconf, Validator # type: ignore
+from dynaconf import Dynaconf, Validator  # type: ignore
 
 # Armazena o caminho absoluto deste arquivo.
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -34,5 +36,5 @@ settings = Dynaconf(
         # Ele também define que essa chave deve ser do tipo string e seu tamanho mínimo
         # deve ser de 64 caracteres.
         Validator("SECURITY__SECRET_KEY", must_exist=True, is_type_of=str, len_min=64)
-    ]
+    ],
 )
