@@ -13,7 +13,6 @@ from .config import settings
 from .db import engine
 from .models import User
 from .models.user import generate_username
-
 from dundie_api.security import get_password_hash
 
 # Instanciando a classe do Typer, a instância é responsável por
@@ -115,6 +114,7 @@ def create_user(
     with Session(engine) as session:
         # Definindo uma instância de usuário usando a classe modelo para
         # enviar ao banco de dados.
+        # TODO: Change to UserRequest.
         user = User(
             name=name,
             email=email,

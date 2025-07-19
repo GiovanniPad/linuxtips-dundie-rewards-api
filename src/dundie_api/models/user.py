@@ -51,6 +51,7 @@ class User(SQLModel, table=True):
 
 
 # TODO: Use slugify library
+# TODO: Move to UserRequest
 # Função para gerar um username a partir do nome do usuário (slug).
 def generate_username(name: str) -> str:
     """Generate a slug from user.name.
