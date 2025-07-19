@@ -12,6 +12,9 @@ from sqlmodel import Session, select
 from .config import settings
 from .db import engine
 from .models import User
+from .models.user import generate_username
+
+from dundie_api.security import get_password_hash
 
 # Instanciando a classe do Typer, a instância é responsável por
 # criar todos os comandos.
@@ -91,3 +94,48 @@ def user_list():
 
     # Imprime a tabela estilizada no terminal.
     Console().print(table)
+
+
+# Comando CLI para cadastrar um novo usuário na aplicação.
+# Os campos 'username' e 'currency' seram opções, enquanto o resto
+# será obrigatório.
+@main.command()
+def create_user(
+    name: str,
+    email: str,
+    password: str,
+    dept: str,
+    username: str | None = None,
+    currency: str = "USD",
+):
+    """Create user"""
+
+    # Abrindo uma conexão (Sessão) com o banco de dados para executar
+    # comandos SQL.
+    with Session(engine) as session:
+        # Definindo uma instância de usuário usando a classe modelo para
+        # enviar ao banco de dados.
+        user = User(
+            name=name,
+            email=email,
+            # Realiza o hash da senha do usuário, por segurança.
+            hashed_password=get_password_hash(password),
+            dept=dept,
+            # Se o usuário não tiver nenhum username gera um novo
+            # username com base em seu nome completo.
+            username=username or generate_username(name),
+            currency=currency,
+        )
+        # Adiciona o usuário a sessão
+        session.add(user)
+        # Executa todos os comandos SQL, refletindo as alterações no
+        # banco de dados.
+        session.commit()
+        # Atualiza o valor do usuário na sessão com os valores do banco de dados,
+        # dessa forma, é possível acessar o id do usuário criado no banco de dados.
+        session.refresh(user)
+        # Mensagem indicando que o usuário foi criado.
+        typer.echo(f"Created {user.username} user.")
+
+        # Retorna o usuário, sendo útil apenas para testes.
+        return user
