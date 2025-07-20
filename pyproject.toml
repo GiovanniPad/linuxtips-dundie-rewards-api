@@ -33,6 +33,7 @@ dev = [
 ]
 
 [tool.taskipy.tasks]
-devserver = { cmd = "uvicorn src.dundie_api.main:app --host 0.0.0.0 --port 8000 --reload", help = "Run FastAPI Development Server" }
+devserver = { cmd = "uvicorn src.dundie_api.main:app --host 0.0.0.0 --port 8000 --reload", help = "Run FastAPI Development Server." }
 rundocker = { cmd = "docker compose up -V --watch", help = "Run docker compose to initialize FastAPI and Postgres Containers."}
-start_migrations = { cmd = "alembic init migrations", help = "Initialize Alembic Migrations"}
+start_migrations = { cmd = "alembic init migrations", help = "Initialize Alembic Migrations."}
+todo = { cmd = "git grep -n TODO", help = "List all project TODOs."}

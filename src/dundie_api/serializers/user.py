@@ -3,10 +3,13 @@
 # Biblioteca para criar classes que vão servir de serializadores para a API, com
 # a possibilidade de validação e controle de exibição de campos.
 from pydantic import BaseModel, field_validator, ValidationInfo, Field
+
 # Classe para definir que uma variável pode ser None, ou seja, opcional.
 from typing import Optional
+
 # Função para criar um hash da senha.
 from dundie_api.security import get_password_hash
+
 # Função para criar um username para o usuário.
 from dundie_api.models.user import generate_username
 
