@@ -119,7 +119,7 @@ def create_user(
             name=name,
             email=email,
             # Realiza o hash da senha do usuário, por segurança.
-            hashed_password=get_password_hash(password),
+            password=get_password_hash(password),
             dept=dept,
             # Se o usuário não tiver nenhum username gera um novo
             # username com base em seu nome completo.
