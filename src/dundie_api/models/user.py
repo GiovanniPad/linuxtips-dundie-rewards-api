@@ -28,7 +28,7 @@ class User(SQLModel, table=True):
     # Campo para a biografia do usuário, também é opcional, mas pode ser uma string.
     bio: Optional[str] = None
     # Campo para armazenar a senha do usuário, sendo um campo obrigatório.
-    hashed_password: str = Field(nullable=False)
+    password: str = Field(nullable=False)
     # Campo para armazenar o nome do usuário, obrigatório. (Not Null)
     name: str = Field(nullable=False)
     # Campo para armazenar o departamento do usuário na empresa, obrigatório. (Not Null)
