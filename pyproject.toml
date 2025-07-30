@@ -37,3 +37,7 @@ dev = [
 devserver = { cmd = "uvicorn src.dundie_api.main:app --host 0.0.0.0 --port 8000 --reload", help = "Run FastAPI Development Server" }
 rundocker = { cmd = "docker compose up --watch", help = "Run docker compose to initialize FastAPI and Postgres Containers."}
 start_migrations = { cmd = "alembic init migrations", help = "Initialize Alembic Migrations"}
+
+#[tool.ruff.lint]
+#select = ["ALL"]
+#ignore = ["COM812", "D203", "D212"]
