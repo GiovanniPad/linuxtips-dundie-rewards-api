@@ -11,25 +11,32 @@ from typing import Callable
 
 # Classe de exceção HTTP principal do FastAPI e módulo 'status' que contém
 # todos os códigos de estado/resposta do HTTP.
-from fastapi import HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
+
 # Classe para autenticação usando o fluxo OAuth2 com um token JWT.
 from fastapi.security import OAuth2PasswordBearer
+
 # Classe para criar modelos do Pydantic.
 from pydantic import BaseModel
 
 # Biblioteca para gerar e validar JWT (PyJWT)
 import jwt
+
 # Classe para representar um erro de validação de um token.
 from jwt import PyJWTError
 
 # Variável de configurações da API.
 from dundie_api.config import settings
+
 # Função para verificar a senha.
 from dundie_api.security import verify_password
+
 # Model 'User".
 from dundie_api.models import User
+
 # Engine para conexão ao banco de dados.
 from dundie_api.db import engine
+
 # Objetos para fazer querys no banco de dados.
 from sqlmodel import select, Session
 
@@ -43,6 +50,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
 # Modelos para representar o Token, RefreshToken e o Payload (conteúdo).
+
 
 # TODO: Move all validation to a unique Token Model later.
 class Token(BaseModel):
@@ -120,7 +128,7 @@ def authenticate_user(
     # usuário em questão não existe.
     if not user:
         return False
-    
+
     # Valida a senha passada para ver se bate com a que está no banco de dados.
     # TODO: VerifyMismatchError
     if not verify_password(plain_password=password, hashed_password=user.password):
@@ -143,13 +151,31 @@ def get_user(username: str | None) -> User | None:
 
 # TODO: Move to pydantic model for direct validation (maybe).
 # Função para validar se o payload está válido e decodificar o token.
-def get_current_user(token: str):
+def get_current_user(
+    token: str = Depends(oauth2_scheme),
+    request: Request = None,  # pyright: ignore[reportArgumentType]
+    fresh=False,
+):
+    """Get currentu ser authenticated."""
     # Variável que representa uma exceção HTTP.
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
+
+    # Se há um objeto request recebido, verifica se o header 'authorization' está
+    # presente usando o walrus operator, dessa forma, tanto a comparação quanto a
+    # atribuição é realizada na mesma linha.
+    # Caso o header 'authorization' estiver definido, ele tenta coletar o token
+    # incluso na solicitação. Caso não for possível adquirir o token, invoca um
+    # erro de credenciais inválidas.
+    if request:
+        if authorization := request.headers.get("authorization"):
+            try:
+                token = authorization.split(" ")[1]
+            except IndexError:
+                raise credentials_exception
 
     try:
         # Decodifica o token, retornando o payload.
@@ -167,11 +193,11 @@ def get_current_user(token: str):
         # de validação de credenciais.
         if username is None:
             raise credentials_exception
-        
+
         # Cria uma instância da classe 'Payload' do Pydantic para representar
         # os dados do token.
         token_data = Payload(username=username)
-    
+
     # Caso a decodificação do token falhar, essa exceção é capturada.
     except PyJWTError:
         # Invoca uma exceção de erro de validação de credenciais.
@@ -184,6 +210,11 @@ def get_current_user(token: str):
     if user is None:
         raise credentials_exception
 
+    # Se for um novo token, é no payload a chave 'fresh' não estiver definida e o usuário
+    # não for um super usuário, retorna um erro de credenciais.
+    if fresh and (not payload["fresh"] and not user.superuser):
+        raise credentials_exception
+
     # Após todas as validações, retorna o usuário, caso tudo for validado com sucesso.
     return user
 
@@ -191,6 +222,21 @@ def get_current_user(token: str):
 # Função para validar o token invocando a função 'get_current_user' e retornar os dados
 # do usuário.
 # TODO: Move to just one function to validate with 'get_current_user'.
-def validate_token(token: str):
+# 'Depends' indica que o token depende do esquema do oauth2, dessa forma
+# as validações são realizadas.
+async def validate_token(token: str = Depends(oauth2_scheme)) -> User:
     user = get_current_user(token=token)
     return user
+
+
+# Função wrapper, que encapsula a função 'get_current_user' para funcionar de forma
+# assíncrona nas chamadas da API.
+async def get_current_active_user(
+    current_user: User = Depends(get_current_user),
+) -> User:
+    """Wrap the sync get_active_user for async calls."""
+    return current_user
+
+# Cria uma dependência e atribui a variável 'AuthenticatedUser' para uso facilitado
+# nas views.
+AuthenticatedUser = Depends(get_current_active_user)

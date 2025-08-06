@@ -21,4 +21,4 @@ RUN chown -R app:app /app
 USER app
 
 # Run the application.
-CMD ["fastapi", "dev", "src/dundie_api/main.py", "--port", "8000", "--host", "0.0.0.0", "--reload"]
+CMD ["uvicorn", "src.dundie_api.main:app", "--port", "8000", "--host", "0.0.0.0", "--reload"]
