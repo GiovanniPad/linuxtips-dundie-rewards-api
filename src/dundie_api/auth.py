@@ -237,6 +237,23 @@ async def get_current_active_user(
     """Wrap the sync get_active_user for async calls."""
     return current_user
 
+
 # Cria uma dependência e atribui a variável 'AuthenticatedUser' para uso facilitado
 # nas views.
 AuthenticatedUser = Depends(get_current_active_user)
+
+
+# Função para verificar se o usuário logado é um superusuário.
+async def get_current_super_user(current_user: User = Depends(get_current_user)):
+    # Se o usuário logado não for um superusuário retorna um erro 403.
+    if not current_user.superuser:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Not a super user"
+        )
+    # Retorna o usuário, se ele for um superusuário.
+    return current_user
+
+
+# Cria uma dependência para ser usuada nas views para indicar que só
+# superusuários podem acessá-la.
+SuperUser = Depends(get_current_super_user)

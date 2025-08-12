@@ -2,6 +2,7 @@ from sqlmodel import Session, select
 from dundie_api.models import User
 from dundie_api.serializers import UserResponse, UserRequest
 from dundie_api.db import ActiveSession
+from dundie_api.auth import AuthenticatedUser, SuperUser
 
 from fastapi import APIRouter, HTTPException
 
@@ -14,7 +15,9 @@ router = APIRouter()
 # Ela possui um modelo de resposta indicando que vai ser retornado uma
 # lista de UserResponse, que é o serializer 'UserResponse'.
 # E possui uma dependência atrelada, que é da sessão do banco de dados 'session'.
-@router.get("/", response_model=list[UserResponse])
+# Protengendo a rota com a dependência 'AuthenticatedUser' para que apenas usuários
+# autenticados a chamem.
+@router.get("/", response_model=list[UserResponse], dependencies=[AuthenticatedUser])
 async def list_users(*, session: Session = ActiveSession):
     """List all users from database."""
     # Selecionando todos os usuários da tabela 'user'.
@@ -59,7 +62,10 @@ async def get_user_by_username(*, session: Session = ActiveSession, username: st
 # Recebe como injeção de dependência, a sessão do banco de dados (session) e o payload (user)
 # que corresponde aos dados do usuário a ser criado.
 # O payload é validado usando o serializador 'UserRequest'.
-@router.post("/", response_model=UserResponse, status_code=201)
+# Protegendo a rota com a dependência 'SuperUser' para que apenas superusuários acessem.
+@router.post(
+    "/", response_model=UserResponse, status_code=201, dependencies=[SuperUser]
+)
 async def create_user(*, session: Session = ActiveSession, user: UserRequest):
     """Create a new user."""
 
