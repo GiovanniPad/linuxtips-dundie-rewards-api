@@ -4,7 +4,9 @@ from dundie_api.serializers import UserResponse, UserRequest
 from dundie_api.db import ActiveSession
 from dundie_api.auth import AuthenticatedUser, SuperUser
 
-from fastapi import APIRouter, HTTPException
+from sqlalchemy.exc import IntegrityError
+
+from fastapi import APIRouter, HTTPException, status
 
 # Criando um conjunto de rotas individuais, neste caso, elas são
 # responsáveis pelas rotas de usuários.
@@ -69,6 +71,14 @@ async def get_user_by_username(*, session: Session = ActiveSession, username: st
 async def create_user(*, session: Session = ActiveSession, user: UserRequest):
     """Create a new user."""
 
+    # LBYL - Verifica antes se o email inserido já está registro para outro
+    # usuário antes de adicionar o usuário no banco de dados.
+    # if session.exec(select(User).where(User.email == user.email)).first():
+    #     raise HTTPException(
+    #         status_code=status.HTTP_409_CONFLICT,
+    #         detail="User email already exists."
+    #     )
+
     # Converte e valida o serializador de entrada 'UserRequest' para o modelo 'User',
     # que é o modelo de conexão ao banco de dados. Todos os campos são validados.
     db_user = User.model_validate(user)
@@ -76,8 +86,20 @@ async def create_user(*, session: Session = ActiveSession, user: UserRequest):
     # Adiciona o usuário a sessão de conexão, para criá-lo.
     session.add(db_user)
 
-    # Executa todos os comandos presentes na sessão, refletindo no banco de dados.
-    session.commit()
+    # Tenta criar o usuário no banco de dados antes de tratar qualquer tipo, apenas
+    # quando der algum erro, vai cair no bloco de except para serem tratados.
+    try:
+        # Executa todos os comandos presentes na sessão, refletindo no banco de dados.
+        session.commit()
+
+    # IntegrityError indica qualquer tipo de erro que possa ocorrer relacionado ao banco de dados.
+    except IntegrityError:
+        # Sempre utilizar o 'HTTPException' para APIs REST.
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Database IntegrityError"
+        )
+
     # Atualiza os dados do usuário instanciado na rota com os dados atualizados do
     # banco de dados, mantendo a conformidade.
     session.refresh(db_user)
