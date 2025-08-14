@@ -2,7 +2,7 @@
 
 # Biblioteca para criar classes que vão servir de serializadores para a API, com
 # a possibilidade de validação e controle de exibição de campos.
-from pydantic import BaseModel, field_validator, ValidationInfo, Field
+from pydantic import BaseModel, field_validator, ValidationInfo, Field, model_validator
 
 # Classe para definir que uma variável pode ser None, ou seja, opcional.
 from typing import Optional
@@ -12,6 +12,8 @@ from dundie_api.security import get_password_hash
 
 # Função para criar um username para o usuário.
 from dundie_api.models.user import generate_username
+
+from fastapi import HTTPException, status
 
 
 # Classe que representa como vai ser o objeto de resposta para o cliente.
@@ -85,3 +87,30 @@ class UserRequest(BaseModel):
     def hash_password(cls, value: str) -> str:
         # Retorna o hash sempre ao criar um novo usuário.
         return get_password_hash(value)
+
+
+# Serializer para validar a operação de PATCH (update parcial) de um usuário.
+class UserProfilePatchRequest(BaseModel):
+    """Serializer for when client wants to partially update user."""
+
+    # Apenas os campos 'avatar' e 'bio' podem ser alterados.
+    avatar: Optional[str] = None
+    bio: Optional[str] = None
+
+    # Validação a nível de modelo, 'mode=before' indica que vai ser executada
+    # antes da criação da instância.
+    # @classmethod indica que é um método da classe, recebendo o contexto 'cls'.
+    @model_validator(mode="before")
+    @classmethod
+    # Validação que garante que pelo menos um campo será passado no update.
+    # Caso nenhum campo for passado, invoca uma exceção HTTP do tipo 400,
+    # indicando uma requisição inválida.
+    def ensure_values(cls, values):
+        if not values:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Bad request, no data informed.",
+            )
+
+        # É necessário retornar os valores já validados para que a validação funcione.
+        return values

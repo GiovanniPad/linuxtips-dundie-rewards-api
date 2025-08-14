@@ -1,6 +1,10 @@
 from sqlmodel import Session, select
 from dundie_api.models import User
-from dundie_api.serializers import UserResponse, UserRequest
+from dundie_api.serializers.user import (
+    UserResponse,
+    UserRequest,
+    UserProfilePatchRequest,
+)
 from dundie_api.db import ActiveSession
 from dundie_api.auth import AuthenticatedUser, SuperUser
 
@@ -97,7 +101,7 @@ async def create_user(*, session: Session = ActiveSession, user: UserRequest):
         # Sempre utilizar o 'HTTPException' para APIs REST.
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Database IntegrityError"
+            detail="Database IntegrityError",
         )
 
     # Atualiza os dados do usuário instanciado na rota com os dados atualizados do
@@ -107,3 +111,63 @@ async def create_user(*, session: Session = ActiveSession, user: UserRequest):
     # Retorna o usuário criado, aqui é feito a serialização dos dados de acordo com
     # o serializador 'UserResponse'.
     return db_user
+
+
+# Rota para realizar o update parcial dos dados de um usuário. O usuário é selecionado
+# através do seu 'username' e o 'patch' define o tipo da rota, no caso, update parcial.
+# 'response_model' indica o modelo de serialização de resposta da requisição.
+@router.patch("/{username}/", response_model=UserResponse)
+# 'session' é a seção de conexão com o banco de dados.
+# 'patch_data' são os dados a serem alterados.
+# 'current_user' é o usuário atual autenticado, neste caso, a dependência está sendo
+# declarada dentro da função, pois vai ser necessário acessar a instância do usuário autenticado.
+# 'username' é o identificador do usuário a ter seus dados parcialmente alterados.
+async def update_user(
+    *,
+    session: Session = ActiveSession,
+    patch_data: UserProfilePatchRequest,
+    current_user: User = AuthenticatedUser,
+    username: str,
+):
+    # Busca o usuário no banco de dados atráves de seu 'username'.
+    user = session.exec(select(User).where(User.username == username)).first()
+
+    # Se nenhum usuário for encontrado invoca uma exceção HTTP do tipo 404
+    # indicando que o usuário não foi encontrado.
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found."
+        )
+
+    # Apenas o próprio usuário ou o superuser pode realizar a operação
+    # de alterar parcialmente os dados.
+    # Caso não for o próprio usuário e não for um superuser, invoca uma
+    # exceção HTTP do tipo 403, que indica não permitido.
+    if user.id != current_user.id and not current_user.superuser:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only update your own profile.",
+        )
+
+    # Verifica se o campo 'avatar' não está vazio para evitar, caso ele não seja
+    # passado, de subscrever o valor atual do campo no banco de dados.
+    if patch_data.avatar is not None:
+        user.avatar = patch_data.avatar
+
+    # Mesmo verificação do campo 'avatar', mas agora para o campo 'bio'.
+    if patch_data.bio is not None:
+        user.bio = patch_data.bio
+
+    # Adiciona a instância modificada do usuário na sessão.
+    session.add(user)
+
+    # TODO: Treat Exceptions
+    # Confirma as mudanças, refletindo as alterações no banco de dados.
+    session.commit()
+
+    # Atualiza a instância do usuário para refletir informações preenchidas
+    # no nível do banco de dados na instância atual.
+    session.refresh(user)
+
+    # Retorna a instância do usuário já atualizada.
+    return user
