@@ -257,3 +257,72 @@ async def get_current_super_user(current_user: User = Depends(get_current_user))
 # Cria uma dependência para ser usuada nas views para indicar que só
 # superusuários podem acessá-la.
 SuperUser = Depends(get_current_super_user)
+
+
+# Função assíncrona que vai ser uma dependência, onde sua ação é de verificar
+# se o usuário possui a devida permissão para realizar a troca de sua senha ou
+# a senha de qualquer outro usuário.
+# 'request' é o objeto da requisição com todos os dados, incluindo o de autenticação.
+# 'pwd_reset_token' é o token opcional que vai ser utilizada pela UI para realizar
+# a troca de senha.
+# 'username' é o usuário que está sendo alterado.
+async def get_user_if_change_password_is_allowed(
+    *, request: Request, pwd_reset_token: None | str = None, username: str
+):
+    """Return user if one of the conditions is met.
+    1. There is a pwd_reset_token passed as query parameter and it is valid OR
+    2. authenticated_user is superuser OR
+    3. authenticated_user is User
+    """
+
+    # Buscando o usuário no banco de dados para alterar sua senha.
+    target_user = get_user(username)
+
+    # Se não encontrar nenhum registro, invoca uma exceção HTTP do tipo 404,
+    # indicando que o usuário não foi encontrado.
+    if not target_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found."
+        )
+
+    # Se o token estiver definido, tenta validar se o token de resetar a senha é
+    # válido e pertence ao usuário que está fazendo a alteração. Se sim, retorna
+    # como True, se não, por invocar uma HTTPException, define como False.
+    try:
+        valid_pwd_reset_token = (
+            get_current_user(token=pwd_reset_token or "") == target_user
+        )
+    except HTTPException:
+        valid_pwd_reset_token = False
+
+    # Tenta validar se o usuário autenticado é válido. Se for retorna o usuário, se não
+    # retorna None.
+    try:
+        authenticated_user = get_current_user(token="", request=request)
+    except HTTPException:
+        authenticated_user = None
+
+    # Verifica se alguma das expressões abaixo é verdadeira, caso qualquer uma delas forem
+    # True, 'any' vai retornar True também, caso contrário, retorna False.
+    if any(
+        [
+            valid_pwd_reset_token,
+            authenticated_user and authenticated_user.superuser,
+            authenticated_user and authenticated_user.id == target_user.id,
+        ]
+    ):
+        # Caso passe em qualquer uma das regras acima impostas, retorna o usuário que vai
+        # ter sua senha alterada
+        return target_user
+
+    # Caso não passe em nenhuma das validações de permissão, retorna uma exceção HTTP do tipo 403,
+    # que determina que o usuário não tem permissão para fazer a troca da senha.
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="You are not allowed to change this user's password.",
+    )
+
+
+# Cria uma dependência para atrelar a uma rota de alterar a senha, permitindo que as regras para
+# alteração da senha seja executada de forma antecipada, antes mesmo de executar a função da view.
+CanChangeUserPassword = Depends(get_user_if_change_password_is_allowed)

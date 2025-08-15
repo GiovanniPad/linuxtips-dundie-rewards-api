@@ -4,9 +4,10 @@ from dundie_api.serializers.user import (
     UserResponse,
     UserRequest,
     UserProfilePatchRequest,
+    UserPasswordPatchRequest,
 )
 from dundie_api.db import ActiveSession
-from dundie_api.auth import AuthenticatedUser, SuperUser
+from dundie_api.auth import AuthenticatedUser, SuperUser, CanChangeUserPassword
 
 from sqlalchemy.exc import IntegrityError
 
@@ -170,4 +171,36 @@ async def update_user(
     session.refresh(user)
 
     # Retorna a instância do usuário já atualizada.
+    return user
+
+
+# Rota para alterar a senha do usuário, possui o modelo de resposta "UserResponse".
+# O usuário é selecionado através de seu 'username'.
+@router.post("/{username}/password/", response_model=UserResponse)
+# 'session' é a sessão de conexão com o banco de dados.
+# 'patch_data' é a nova senha.
+# 'user' representa o usuário que está realizando a alteração de senha.
+# 'CanChangeUserPassword' é uma dependência que garante que o usuário em questão
+# possui a permissão necessária para alterar a senha desejada.
+async def change_password(
+    *,
+    session: Session = ActiveSession,
+    patch_data: UserPasswordPatchRequest,
+    user: User = CanChangeUserPassword,
+):
+    # Altera a senha do usuário.
+    user.password = patch_data.password
+
+    # Adiciona o usuário na sessão.
+    session.add(user)
+
+    # Adiciona o usuário no banco de dados.
+    session.commit()
+
+    # Atualiza o objeto 'user' com as informações
+    # do banco de dados, para refletir qualquer
+    # alteração feita na camada de banco de dados.
+    session.refresh(user)
+
+    # Retorna o usuário completo.
     return user

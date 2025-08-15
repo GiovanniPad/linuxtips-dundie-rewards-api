@@ -114,3 +114,43 @@ class UserProfilePatchRequest(BaseModel):
 
         # É necessário retornar os valores já validados para que a validação funcione.
         return values
+
+
+# Serializer para realizar a validação dos dados para a rota de alterar a senha de um usuário.
+class UserPasswordPatchRequest(BaseModel):
+    # Senha.
+    password: str
+    # Confirmação da senha.
+    password_confirm: str
+
+    # Decorator para declarar uma validação a nível de model (escopo).
+    @model_validator(mode="before")
+    # Validação para checar se as senhas são iguais.
+    # 'values' representa todos os campos e seus dados do model.
+    # 'cls' representa o contexto da instância, para isso é necessário ser um
+    # método da classe com @classmethod.
+    @classmethod
+    def check_passwords_match(cls, values):
+        """Check if passwords match."""
+
+        # Valida se as senhas são iguais, se não forem, invoca uma exceção HTTP
+        # do tipo 400, indicando que as senhas não são iguais.
+        if values.get("password") != values.get("password_confirm"):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Passwords do not match.",
+            )
+
+        # Obrigatoriamente
+        return values
+
+    # Validador para garantir que a senha passada seja hasheada antes mesmo de instanciar
+    # a classe, dessa forma, garante um nível de segurança mesmo durante as transações e
+    # execuções do script.
+    # 'cls' representa o contexto da instância, por ser um '@classmethod' e 'value' representa
+    # o valor do campo 'password' a ser validado.
+    @field_validator("password", mode="before")
+    @classmethod
+    def hash_password(cls, value: str) -> str:
+        # Retorna o hash sempre ao criar um novo usuário.
+        return get_password_hash(value)
