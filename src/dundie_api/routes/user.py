@@ -8,10 +8,11 @@ from dundie_api.serializers.user import (
 )
 from dundie_api.db import ActiveSession
 from dundie_api.auth import AuthenticatedUser, SuperUser, CanChangeUserPassword
+from dundie_api.tasks.user import try_to_send_pwd_reset_email
 
 from sqlalchemy.exc import IntegrityError
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Body, BackgroundTasks
 
 # Criando um conjunto de rotas individuais, neste caso, elas são
 # responsáveis pelas rotas de usuários.
@@ -204,3 +205,27 @@ async def change_password(
 
     # Retorna o usuário completo.
     return user
+
+
+# Rota para gerar um token de resetar a senha e enviá-lo por email de forma
+# assíncrona.
+@router.post("/pwd_reset_token")
+# TODO: Create an email serializer for email validation.
+async def send_password_reset_token(
+    *, email: str = Body(embed=True), background_tasks: BackgroundTasks
+):
+    """Send an email with the token to reset password."""
+
+    # Adicionando a função 'try_to_send_pwd_reset_email' em segundo plano
+    # e executando ela como uma tarefa. 'email' é o parâmetro que vai passado
+    # para esta função.
+    # Dessa forma, o usuário vai receber a confirmação que o email vai ser enviado,
+    # porém o envio do mesmo vai estar acontecendo de forma concorrente em segundo plano
+    # não parando a execução da API.
+    background_tasks.add_task(try_to_send_pwd_reset_email, email=email)
+
+    # Retorna uma mensagem confirmando que se o usuário existir, o email vai ser enviado em algum
+    # momento.
+    return {
+        "message": "If we found a user with that email, we sent a password reset token to it."
+    }

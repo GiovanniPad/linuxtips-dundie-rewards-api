@@ -19,3 +19,24 @@ echo = false
 [default.security]
 # A chave deve ser definida em .secrets.toml.
 #SECRET_KEY = ""
+# Tempo de expiração do token de alterar a senha.
+RESET_TOKEN_EXPIRE_MINUTES = 10
+# URL do frontend para alteração da senha.
+PWD_RESET_URL = "https://www.dm.com/reset_password"
+
+# Configurações de servidor de email.
+[default.email]
+# Define se está em debug mode ou não.
+debug_mode = true
+# Email remetente.
+smtp_sender = "no-reply@dm.com"
+# Hostname do servidor de emails SMTP.
+smtp_server = "localhost"
+# Porta do servidor de emails SMTP.
+smtp_port = 1025
+
+# Usuário e senha para realizar a autenticação no servidor de emails,
+# essas configurações devem estar em '.secrets.toml' e não devem ser enviadas
+# para o repositório.
+smtp_user = "<replace in .secrets.toml>"
+smtp_password = "<replace in .secrets.toml>"
