@@ -3,9 +3,10 @@ from sqlmodel import SQLModel
 
 # Model User.
 from .user import User
+from .transaction import Transaction, Balance
 
 # Variável especial que, ao importar todo o pacote 'models', também
 # importa automaticamente objetos declarados nesta lista. Neste caso,
 # estamos importando apenas as classes User e a classe SQLModel
 # ao chamar 'from dundie_api.models import *'.
-__all__ = ["User", "SQLModel"]
+__all__ = ["User", "SQLModel", "Transaction", "Balance"]

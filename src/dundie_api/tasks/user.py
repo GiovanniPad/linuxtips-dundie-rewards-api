@@ -41,7 +41,6 @@ def _send_email_smtp(email: str, message: str):
         settings.email.smtp_server,  # type: ignore
         settings.email.smtp_port,  # type: ignore
     ) as server:
-        
         # Realiza a autenticação no servidor de email, caso for necessário, para isso
         # é preciso de um usuário e senha.
         server.login(settings.email.smtp_user, settings.email.smtp_password)  # type: ignore
@@ -75,7 +74,6 @@ def try_to_send_pwd_reset_email(email):
 
     # Abre uma sessão de conexão com o banco de dados
     with Session(engine) as session:
-
         # Busca o usuário na base de dados, pesquisando pelo email.
         user = session.exec(select(User).where(User.email == email)).first()
         # Caso não encontrar o usuário, encerra o processo.

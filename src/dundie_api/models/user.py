@@ -1,10 +1,15 @@
 # Classe para definir que uma variável pode ser None, ou seja, opcional.
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 # Classes para realizar modelagem de dados.
 # 'Field' declara um campo de uma tabela e 'SQLModel' permite que uma classe
 # se torne, através de herança, uma representação de uma tabela (modelo de dados).
-from sqlmodel import Field, SQLModel
+from sqlmodel import Field, SQLModel, Relationship
+
+# Realiza o import apenas no momento de verificação dos tipos e não em execução para
+# evitar circular import.
+if TYPE_CHECKING:
+    from dundie_api.models.transaction import Transaction, Balance
 
 
 # Criando a classe 'User', que representa a tabela 'user' no banco de dados.
@@ -37,6 +42,38 @@ class User(SQLModel, table=True):
     # não pode ser Nulo (obrigatório).
     currency: str = Field(nullable=False)
 
+    # Campo que declara a relação entre a tabela 'Transaction' e 'User'. Ele permite acessar
+    # todas as transações de entrada de pontos e também define um campo 'user' na tabela
+    # 'Transaction' para acessar o usuário que está recebendo a pontuação.
+    # 'sa_relationship_kwargs' com 'primaryjoin' define o JOIN a ser realizado entre as
+    # duas tabelas, utilizando a chave primária e chave estrangeira.
+    incomes: Optional[list["Transaction"]] = Relationship(
+        back_populates="user",
+        sa_relationship_kwargs={"primaryjoin": "User.id == Transaction.user_id"},
+    )
+
+    # Campo que declara a relação entre a tabela 'Transaction' e 'User'. Ele permite acessar
+    # todas as transações de saída de pontos e também define um campo 'from_user' na tabela
+    # 'Transaction' para acessar o usuário que está enviando os pontos.
+    # 'sa_relationship_kwargs' com 'primaryjoin' define o JOIN a ser realizado entre as
+    # duas tabelas, utilizando a chave primária e chave estrangeira.
+    expenses: Optional[list["Transaction"]] = Relationship(
+        back_populates="from_user",
+        sa_relationship_kwargs={"primaryjoin": "User.id == Transaction.from_id"},
+    )
+
+    # Campo que declara a relação entre a tabela 'Balance' e 'User'. Ele permite acessar o
+    # saldo do usuário a partir da tabela User e também popula um campo 'user' na tabela
+    # 'Balance' para acessar qual o usuário daquele saldo.
+    # 'sa_relationship_kwargs' com 'lazy' igual a 'dynamic' define que esse campo não vai
+    # ser populado logo de início ao criar a instância, ele só irá realizar a query apenas
+    # no momento em que for chamado.
+    # Por ter um underline no nome, este atributo não deve ser acessado diretamente, em vez
+    # disso, deve-se utilizar a propriedade '.balance'.
+    _balance: Optional["Balance"] = Relationship(
+        back_populates="user", sa_relationship_kwargs={"lazy": "dynamic"}
+    )
+
     # Decorator para transformar um método em uma propriedade, dessa forma,
     # ele pode ser chamado como uma propriedade da classe, sem a necessidade
     # de chamar o método como uma função.
@@ -48,6 +85,20 @@ class User(SQLModel, table=True):
     def superuser(self):
         """Users belonging to Management dept are admins."""
         return self.dept == "management"
+
+    # Decorator para transformar a função em uma propriedade, e esta propriedade
+    # tem a função de pegar o saldo do usuário.
+    @property
+    def balance(self) -> int:
+        """Return the current balance of the user"""
+
+        # Definindo a variável 'user_balance' e ao mesmo tempo buscando na tabela 'Balance'
+        # através da relação '_balance' para verificar se ele está vazio ou não.
+        if (user_balance := self._balance.first()) is not None:  # pyright: ignore
+            return user_balance.value
+
+        # Retorna zero se o saldo não estiver definido.
+        return 0
 
 
 # TODO: Use slugify library
