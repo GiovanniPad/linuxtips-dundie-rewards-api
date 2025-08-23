@@ -70,9 +70,7 @@ class User(SQLModel, table=True):
     # no momento em que for chamado.
     # Por ter um underline no nome, este atributo não deve ser acessado diretamente, em vez
     # disso, deve-se utilizar a propriedade '.balance'.
-    _balance: Optional["Balance"] = Relationship(
-        back_populates="user", sa_relationship_kwargs={"lazy": "dynamic"}
-    )
+    _balance: Optional["Balance"] = Relationship(back_populates="user")
 
     # Decorator para transformar um método em uma propriedade, dessa forma,
     # ele pode ser chamado como uma propriedade da classe, sem a necessidade
@@ -94,7 +92,7 @@ class User(SQLModel, table=True):
 
         # Definindo a variável 'user_balance' e ao mesmo tempo buscando na tabela 'Balance'
         # através da relação '_balance' para verificar se ele está vazio ou não.
-        if (user_balance := self._balance.first()) is not None:  # pyright: ignore
+        if (user_balance := self._balance.value()) is not None:  # pyright: ignore
             return user_balance.value
 
         # Retorna zero se o saldo não estiver definido.
