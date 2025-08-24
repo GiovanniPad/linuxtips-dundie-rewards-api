@@ -194,6 +194,7 @@ dependencies = [
     { name = "argon2-cffi" },
     { name = "dynaconf" },
     { name = "fastapi", extra = ["standard"] },
+    { name = "fastapi-pagination" },
     { name = "psycopg", extra = ["binary"] },
     { name = "pyjwt", extra = ["crypto"] },
     { name = "rich" },
@@ -214,6 +215,7 @@ requires-dist = [
     { name = "argon2-cffi", specifier = ">=25.1.0" },
     { name = "dynaconf", specifier = ">=3.2.11" },
     { name = "fastapi", extras = ["standard"], specifier = ">=0.115.14" },
+    { name = "fastapi-pagination", specifier = ">=0.14.0" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.2.9" },
     { name = "pyjwt", extras = ["crypto"], specifier = ">=2.10.1" },
     { name = "rich", specifier = ">=14.0.0" },
@@ -300,6 +302,20 @@ wheels = [
 [package.optional-dependencies]
 standard = [
     { name = "uvicorn", extra = ["standard"] },
+]
+
+[[package]]
+name = "fastapi-pagination"
+version = "0.14.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "fastapi" },
+    { name = "pydantic" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/b7/94/7f894a3137b2c5618f5b677c468a9a54c3e82a40019e168c7e1ac02112a4/fastapi_pagination-0.14.0.tar.gz", hash = "sha256:e576800270f2714c781241b66c11f5da24f6671670edc122f5be7e4c2bd7f353", size = 557583, upload-time = "2025-08-20T17:56:19.456Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/74/f3/b00424f9fe4d1f0a7657b7ab931bdfea5a9a9103f6684a0d64687d6f9f94/fastapi_pagination-0.14.0-py3-none-any.whl", hash = "sha256:72ed471c79c3aa07940b287b9cf022503ec2e69e1f2ca5a7a5fcd8152cc43392", size = 52517, upload-time = "2025-08-20T17:56:18.404Z" },
 ]
 
 [[package]]
