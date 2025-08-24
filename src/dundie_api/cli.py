@@ -15,6 +15,9 @@ from .models import User
 from .models.user import generate_username
 from dundie_api.security import get_password_hash
 
+from dundie_api.tasks.transaction import add_transaction
+from dundie_api.models.transaction import Transaction, Balance
+
 # Instanciando a classe do Typer, a instância é responsável por
 # criar todos os comandos.
 # Define o nome da CLI usando 'name' e faz com que o autocomplete não
@@ -37,6 +40,9 @@ def shell():
         "select": select,
         "session": Session(engine),
         "User": User,
+        "Transaction": Transaction,
+        "Balance": Balance,
+        "add_transaction": add_transaction,
     }
     # Imprime uma mensagem no console informando os módulos que
     # foram importados automaticamente.
@@ -139,3 +145,58 @@ def create_user(
 
         # Retorna o usuário, sendo útil apenas para testes.
         return user
+
+
+# Comando CLI para adicionar pontos a um usuário. Apenas o admin executa
+# esse comando, logo, todos os pontos saem do usuário administrador.
+# 'username' é o usuário que vai receber os pontos.
+# 'value' é a quantidade de pontos que ele vai receber.
+@main.command()
+def transaction(username: str, value: int):
+    """Add specified value to the user"""
+
+    # Cria uma tabela para apresentar os dados da transação.
+    table = Table(title="Transaction")
+    # Colunas que vai ter na tabela. 'user' indica o usuário,
+    # 'before' indica o saldo antes da transação e 'after' indica
+    # o saldo após a transação.
+    fields = ["user", "before", "after"]
+
+    # Adiciona as colunas na tabela com o estilo magenta.
+    for header in fields:
+        table.add_column(header, style="magenta")
+
+    # Abre uma sessão com o banco de dados
+    with Session(engine) as session:
+        # Seleciona qual o usuário que vai enviar os pontos, neste caso é o 'admin'.
+        from_user = session.exec(select(User).where(User.username == "admin")).first()
+        # Cláusula de guarda, caso não encontrar nenhum usuário admin.
+        if not from_user:
+            typer.echo("Admin user not found")
+            exit(1)
+
+        # Seleciona qual o usuário que vai receber os pontos a partir do 'username'.
+        user = session.exec(select(User).where(User.username == username)).first()
+
+        # Cláusula de guarda para verificar se o usuário foi encontrado ou não, caso não
+        # for encontrado, retorna uma mensagem de erro e encerra a aplicação.
+        if not user:
+            typer.echo(f"User {username} not found.")
+            exit(1)
+
+        # Define o saldo anterior a transação de ambos os usuários envolvidos.
+        from_user_before = from_user.balance
+        user_before = user.balance
+
+        # Efetua e confirma a transação.
+        add_transaction(user=user, from_user=from_user, session=session, value=value)
+
+        # Adiciona as linhas que representam os usuários envolvidos, com seus respectivos saldos,
+        # sendo o primeiro o saldo anterior e o segundo o novo saldo após a transação.
+        table.add_row(from_user.username, str(from_user_before), str(from_user.balance))
+        table.add_row(user.username, str(user_before), str(user.balance))
+
+        # TODO: create JSON response
+
+        # Imprime a tabela no console (terminal).
+        Console().print(table)

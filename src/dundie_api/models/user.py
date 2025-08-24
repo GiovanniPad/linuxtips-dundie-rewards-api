@@ -65,9 +65,6 @@ class User(SQLModel, table=True):
     # Campo que declara a relação entre a tabela 'Balance' e 'User'. Ele permite acessar o
     # saldo do usuário a partir da tabela User e também popula um campo 'user' na tabela
     # 'Balance' para acessar qual o usuário daquele saldo.
-    # 'sa_relationship_kwargs' com 'lazy' igual a 'dynamic' define que esse campo não vai
-    # ser populado logo de início ao criar a instância, ele só irá realizar a query apenas
-    # no momento em que for chamado.
     # Por ter um underline no nome, este atributo não deve ser acessado diretamente, em vez
     # disso, deve-se utilizar a propriedade '.balance'.
     _balance: Optional["Balance"] = Relationship(back_populates="user")
@@ -92,7 +89,7 @@ class User(SQLModel, table=True):
 
         # Definindo a variável 'user_balance' e ao mesmo tempo buscando na tabela 'Balance'
         # através da relação '_balance' para verificar se ele está vazio ou não.
-        if (user_balance := self._balance.value()) is not None:  # pyright: ignore
+        if (user_balance := self._balance) is not None:  # pyright: ignore
             return user_balance.value
 
         # Retorna zero se o saldo não estiver definido.
