@@ -33,6 +33,8 @@ class UserResponse(BaseModel):
     avatar: Optional[str] = None
     bio: Optional[str] = None
     currency: str
+    # Campo que indica o saldo de pontos do usuário
+    balance: Optional[int] = None
 
 
 # Classe que define o serializador de Request, que será usado quando o usuário

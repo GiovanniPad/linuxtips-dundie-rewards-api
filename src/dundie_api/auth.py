@@ -7,7 +7,7 @@ from datetime import UTC, datetime, timedelta
 from functools import partial
 
 # Type Annotation para um objeto do tipo chamável/invocável.
-from typing import Callable
+from typing import Callable, Optional
 
 # Classe de exceção HTTP principal do FastAPI e módulo 'status' que contém
 # todos os códigos de estado/resposta do HTTP.
@@ -326,3 +326,50 @@ async def get_user_if_change_password_is_allowed(
 # Cria uma dependência para atrelar a uma rota de alterar a senha, permitindo que as regras para
 # alteração da senha seja executada de forma antecipada, antes mesmo de executar a função da view.
 CanChangeUserPassword = Depends(get_user_if_change_password_is_allowed)
+
+
+# Dependência para validar se o usuário possui a permissão para visualizar o campo de saldo dos
+# usuários e o seu próprio saldo.
+# 'request' é o objeto da requisição, 'show_balance' é um campo opcional que pode ser passado para
+# informar se vai ou não exibir o saldo.
+async def show_balance_field(
+    *, request: Request, show_balance: Optional[bool] = False
+) -> bool:
+    """Return True if one of the condition is met.
+    1. show_balance is True AND
+    2. authenticated_user.superuser OR
+    3. authenticated_user.username == username
+    """
+    # Se o campo for falso, não valida nada, apenas retorna que o campo 'balance' não vai ser exibido.
+    if not show_balance:
+        return False
+
+    # Adquire o parâmetro 'username' a partir do caminho da rota para validação e verificar a permissão.
+    username = request.path_params.get("username")
+
+    # Tenta autenticar o usuário que está fazendo a requisição, caso consiga logar, armazena o usuário,
+    # caso contrário, armazena como None.
+    try:
+        authenticated_user = get_current_user(token="", request=request)
+    except HTTPException:
+        authenticated_user = None
+
+    # Valida as expressões abaixo, caso qualquer uma delas forem verdadeira, a função 'any' retorna True.
+    # Permite o usuário acessar o saldo, caso ele esteja autenticado e também seja um super usuário ele tem permissão ou
+    # caso ele esteja autenticado e esteja tentando visualizar seu próprio saldo também tem permissão, caso contrário
+    # não tem permissão.
+    if any(
+        [
+            authenticated_user and authenticated_user.superuser,
+            authenticated_user and authenticated_user.username == username,
+        ]
+    ):
+        return True
+
+    # Caso ele não possua nenhum tipo de permissão, retorna False.
+    return False
+
+
+# Cria uma dependência para permitir a exibição do campo de saldo dos usuários nas
+# rotas.
+ShowBalanceField = Depends(show_balance_field)

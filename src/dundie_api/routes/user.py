@@ -7,7 +7,12 @@ from dundie_api.serializers.user import (
     UserPasswordPatchRequest,
 )
 from dundie_api.db import ActiveSession
-from dundie_api.auth import AuthenticatedUser, SuperUser, CanChangeUserPassword
+from dundie_api.auth import (
+    AuthenticatedUser,
+    SuperUser,
+    CanChangeUserPassword,
+    ShowBalanceField,
+)
 from dundie_api.tasks.user import try_to_send_pwd_reset_email
 
 from sqlalchemy.exc import IntegrityError
@@ -25,16 +30,30 @@ router = APIRouter()
 # E possui uma dependência atrelada, que é da sessão do banco de dados 'session'.
 # Protengendo a rota com a dependência 'AuthenticatedUser' para que apenas usuários
 # autenticados a chamem.
-@router.get("/", response_model=list[UserResponse], dependencies=[AuthenticatedUser])
-async def list_users(*, session: Session = ActiveSession):
+# 'response_model_exclude_unset=True' faz com que seja excluídos campos não definidos
+# na response, usando o modelo de response.
+@router.get(
+    "/",
+    response_model=list[UserResponse],
+    response_model_exclude_unset=True,
+    dependencies=[AuthenticatedUser],
+)
+async def list_users(
+    *, session: Session = ActiveSession, show_balance_field: bool = ShowBalanceField
+):
     """List all users from database."""
+    # TODO: Pagination and move balance show to another view.
+
     # Selecionando todos os usuários da tabela 'user'.
     users = session.exec(select(User)).all()
 
-    # Retornando a lista de usuários.
-    # Por ter um modelo de response indicado o framework vai
-    # exibir, filtrar e aplicar todas as validações definidas no
-    # modelo de response em cima do modelo principal 'User'.
+    # Se o campo show_balance_field estiver como falso, exclui da resposta o campo
+    # de 'balance' que indica a quantidade de moeda de cada usuário.
+    if not show_balance_field:
+        return [User.model_dump(user, exclude="balance") for user in users]
+
+    # Caso o campo show_balance_field estiver como verdadeiro e o usuário tiver
+    # permissão, exibe todos os usuários com seus respectivos saldos.
     return users
 
 
@@ -43,8 +62,21 @@ async def list_users(*, session: Session = ActiveSession):
 # O serializador de resposta desta rota é 'UserResponse'.
 # Ela também recebe a dependência da sessão do banco de dados e o 'username' inserido
 # na rota, através de injeção de dependência.
-@router.get("/{username}/", response_model=UserResponse)
-async def get_user_by_username(*, session: Session = ActiveSession, username: str):
+# 'response_model_exclude_unset' definido como True, exclui os campos não definidos automaticamente
+# da resposta desta rota/view.
+# Por ter a dependência 'AuthenticatedUser', o usuário precisa estar logado para utilizar esta rota.
+@router.get(
+    "/{username}/",
+    response_model=UserResponse,
+    response_model_exclude_unset=True,
+    dependencies=[AuthenticatedUser],
+)
+async def get_user_by_username(
+    *,
+    session: Session = ActiveSession,
+    username: str,
+    show_balance_field: bool = ShowBalanceField,
+):
     """Get single user by username"""
 
     # Query para selecionar o usuário no banco de dados através de seu 'username'.
@@ -59,6 +91,11 @@ async def get_user_by_username(*, session: Session = ActiveSession, username: st
     if not user:
         # Invoca uma exceção HTTP com código 404 (not found) e uma mensagem detalhada.
         raise HTTPException(status_code=404, detail=f"User {username} not found")
+
+    # Mesma situação da rota anterior, se o campo 'show_balance_field' for falso o campo
+    # 'balance' vai ser excluído da resposta. Caso contrário, ele vai ser incluído.
+    if not show_balance_field:
+        return User.model_dump(user, exclude="balance")
 
     # Retorna o usuário encontrado no banco de dados, o framework já realiza a serialização
     # para o modelo de response UserResponse, desde que seja compatível.
