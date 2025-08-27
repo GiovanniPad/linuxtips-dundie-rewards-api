@@ -30,6 +30,7 @@ packages = ["src/dundie_api"]
 [dependency-groups]
 dev = [
     "ipython>=9.3.0",
+    "pytest>=8.4.1",
     "ruff>=0.12.1",
     "taskipy>=1.14.1",
 ]

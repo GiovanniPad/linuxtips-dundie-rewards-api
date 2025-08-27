@@ -10,7 +10,7 @@ from sqlmodel import Session, select
 
 # Importando as configurações, engine e model User do app.
 from .config import settings
-from .db import engine
+from .db import engine, SQLModel
 from .models import User
 from .models.user import generate_username
 from dundie_api.security import get_password_hash
@@ -200,3 +200,22 @@ def transaction(username: str, value: int):
 
         # Imprime a tabela no console (terminal).
         Console().print(table)
+
+
+# Comando CLI para resetar o banco de dados.
+@main.command()
+def reset_db(
+    force: bool = typer.Option(False, "--force", "-f", help="RUn with no confirmation"),
+):
+    """Reset the database tables"""
+    # Mensagem de confirmação para exclusão do banco de dados.
+    # Se for passado a opção de "--force" no comando ele pula a confirmação.
+    force = force or typer.confirm("Are you sure?")
+
+    # Exclui apenas se tiver sido confirmado a exclusão ou então o comando
+    # tiver sido executado com "--force".
+    if force:
+        # Comando para excluir todas as tabelas do banco de dados. É importante
+        # que 'SQLModel' venha do arquivo de db, onde todas as configurações do
+        # banco de dados foram definidas.
+        SQLModel.metadata.drop_all(engine)

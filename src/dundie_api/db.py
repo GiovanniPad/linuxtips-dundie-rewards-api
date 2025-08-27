@@ -1,6 +1,6 @@
 """Database connection"""
 
-from sqlmodel import create_engine, Session
+from sqlmodel import create_engine, Session, SQLModel  # noqa: F401
 from .config import settings
 from fastapi import Depends
 
