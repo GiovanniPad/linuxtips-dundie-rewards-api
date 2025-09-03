@@ -40,3 +40,10 @@ smtp_port = 1025
 # para o repositório.
 smtp_user = "<replace in .secrets.toml>"
 smtp_password = "<replace in .secrets.toml>"
+
+# Chave de configurações do Redis
+[default.redis]
+# Nome do host.
+host = "redis"
+# Porta para conexão.
+port = 6379

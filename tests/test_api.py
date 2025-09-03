@@ -9,9 +9,12 @@ USER_RESPONSE_WITH_BALANCE_KEYS = USER_RESPONSE_KEYS | {"balance"}
 # Todos esses testes são feitos em cima das URLs da API e não das funções/views que tratam
 # as requisições.
 
+
 # Teste para garantir que todos os usuários foram criados e são exibidos na rota /user/
 @pytest.mark.order(1)
-def test_user_list(api_client_admin, api_client_user1, api_client_user2, api_client_user3):
+def test_user_list(
+    api_client_admin, api_client_user1, api_client_user2, api_client_user3
+):
     """Ensure that all needed users are created and showing on the /user/ API
 
     NOTE: user fixtures are called just to trigger creation of users.

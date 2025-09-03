@@ -44,6 +44,28 @@ services:
           path: ./pyproject.toml
           ignore:
             - ./src
-  
+  redis:
+    image: redis:latest
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - dundie_redis_data:/data
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    environment:
+      DUNDIE_DB__uri: "postgresql+psycopg://postgres:postgres@db:5432/${DUNDIE_DB:-dundie}"
+      DUNDIE_DB__connect_args: "{}"
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - .:/app
+    working_dir: /app
+    command: uv run rq worker --with-scheduler --url redis://redis:6379
+
 volumes:
   dundie_pg_data:
+  dundie_redis_data:
