@@ -253,7 +253,7 @@ async def send_password_reset_token(*, email: str = Body(embed=True)):
     """Send an email with the token to reset password."""
 
     # Adicionando a função 'try_to_send_pwd_reset_email' em segundo plano
-    # e executando ela como uma tarefa a partir de uma fila de tarefas. 
+    # e executando ela como uma tarefa a partir de uma fila de tarefas.
     # 'email' é o parâmetro que vai passado para esta função.
     # Dessa forma, o usuário vai receber a confirmação que o email vai ser enviado,
     # porém o envio do mesmo vai estar acontecendo de forma concorrente em segundo plano

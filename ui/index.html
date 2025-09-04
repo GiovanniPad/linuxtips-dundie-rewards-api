@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Transactions</title>
+</head>
+
+<body>
+    <h1>Transaction list</h1>
+    <ul id="transaction-list"></ul>
+
+    <script>
+        // Função para selecionar a lista de transações e adicionar um novo elemento nela contendo
+        // os dados de cada transação.
+        function appendTransactionToList(transaction) {
+            let transactionList = document.getElementById("transaction-list");
+            let listItem = document.createElement("li");
+            listItem.innerText = transaction.to + " - " + transaction.from + " - " + transaction.value;
+            transactionList.appendChild(listItem);
+        }
+
+        // Abre uma nova conexão de websocket com o servidor.
+        var ws = new WebSocket("ws://localhost:8000/transaction/ws");
+
+        // Função que vai ser executado quando a conexão for aberta.
+        ws.onopen = function (event) {
+            console.log("WebSocket connection opened");
+        };
+
+        // Função que vai ser executada quando receber uma mensagem
+        // do servidor.
+        ws.onmessage = function (event) {
+            console.log("New message received:", event.data)
+
+            // Parse JSON data
+            let transaction = JSON.parse(event.data);
+
+            // Append transaction to list
+            appendTransactionToList(transaction);
+        }
+
+        // Função que vai ser executado ao fechar a conexão websocket.
+        ws.onclose = function (event) {
+            console.log("WebSocket connection closed");
+        }
+
+        // Função que vai executar caso ocorrer algum tipo de erro.
+        ws.onerror = function (event) {
+            console.error("WebSocket error:", event);
+        }
+    </script>
+</body>
+
+</html>

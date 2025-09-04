@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Body, HTTPException, Depends
+from asyncio import sleep
+from fastapi import APIRouter, Body, HTTPException, Depends, WebSocket
 from dundie_api.auth import AuthenticatedUser
 from dundie_api.db import ActiveSession
 from dundie_api.models import User
@@ -122,3 +123,44 @@ async def list_transactions(
     # Retorna todas as transações de forma paginada. Para isso é preciso passar a sessão de conexão com
     # o banco de dados, a query de seleção e os parâmetros (nº de páginas e nº de registros por página).
     return paginate(session=session, query=query, params=params)
+
+
+# TODO: Use ConnectionManager from fastapi docs.
+# Definindo um endpoint do tipo websocket.
+@router.websocket("/ws")
+async def list_transactions_ws(websocket: WebSocket, session: Session = ActiveSession):
+    # Quando o usuário chama o endpoint para abrir uma conexão, cai nessa linha, que ela aceita a conexão.
+    # Por ser operações de I/O, deve-se utilizar o await e por conta disso o servidor fica aguardando mensagens
+    # neste ponto do código.
+    await websocket.accept()
+
+    # Variável de controle para exibir apenas a última transição por vez.
+    last = 0
+
+    # Loop infinito para que a conexão fique aberta sempre. A partir daqui a conexão já está aberta.
+    while True:
+        # Realiza uma query no banco de dados filtrando apenas pelas novas transações, ordenando-as por id.
+        # Aqui mora o problema por conta de ser síncrono, prejudicando muito a performance e não é recomendado
+        # fazer isso em operações de websocket.
+        new_transactions = session.exec(
+            select(Transaction).where(Transaction.id > last).order_by("id")
+        )
+
+        # Para cada transação, constrói um dicionário com os dados requisitados e envia ao usuário.
+        for transaction in new_transactions:
+            data = {
+                "to": transaction.user.name,
+                "from": transaction.from_user.name,
+                "value": transaction.value,
+            }
+
+            # Encaminha o JSON para o cliente que está conectado. O uso de await se deve ao fato de garantir
+            # que a mensagem vai chegar por inteira ao usuário antes de continuar a execução do código, não
+            # sobrepondo as mensagens.
+            await websocket.send_json(data)
+
+            # Define qual foi a última transação enviada para o usuário.
+            last = transaction.id
+
+            # Apenas para visualização no frontend, não é necessário!!!
+            await sleep(1)

@@ -24,7 +24,6 @@ services:
       - .:/app
       - /app/.venv
     working_dir: /app
-
   db:
     build: postgres
     container_name: postgres
@@ -65,6 +64,12 @@ services:
       - .:/app
     working_dir: /app
     command: uv run rq worker --with-scheduler --url redis://redis:6379
+  ui:
+    image: nginx:latest
+    ports:
+      - "8001:80"
+    volumes:
+      - ./ui:/usr/share/nginx/html
 
 volumes:
   dundie_pg_data:

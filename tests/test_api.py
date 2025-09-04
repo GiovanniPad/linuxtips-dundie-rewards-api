@@ -133,3 +133,14 @@ def test_regular_user_can_see_only_own_transactions(api_client_user3):
     assert transactions["items"][0]["value"] == 500
     assert transactions["items"][0]["user"] == "user3"
     assert transactions["items"][0]["from_user"] == "admin"
+
+
+# Teste para validar se o usuário admin consegue listar todas as transações utilizando o
+# endpoint de websocket.
+@pytest.mark.order(6)
+def test_admin_can_list_all_transactions_ws(api_client_admin):
+    """Admin can list all 4 transactions on ws endpoint"""
+    with api_client_admin.websocket_connect("/transaction/ws") as ws:
+        for i in range(4):
+            data = ws.receive_json()
+            assert data.keys() == {"to", "from", "value"}
