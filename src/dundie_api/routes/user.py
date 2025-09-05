@@ -18,7 +18,7 @@ from dundie_api.queue import queue
 
 from sqlalchemy.exc import IntegrityError
 
-from fastapi import APIRouter, HTTPException, status, Body, BackgroundTasks
+from fastapi import APIRouter, HTTPException, status, Body
 
 # Criando um conjunto de rotas individuais, neste caso, elas são
 # responsáveis pelas rotas de usuários.
@@ -36,8 +36,7 @@ router = APIRouter()
 @router.get(
     "/",
     response_model=list[UserResponse],
-    response_model_exclude_unset=True,
-    dependencies=[AuthenticatedUser],
+    response_model_exclude_unset=True
 )
 async def list_users(
     *, session: Session = ActiveSession, show_balance_field: bool = ShowBalanceField
